@@ -84,9 +84,9 @@ DETAILS+="- **时间:** ${TIMESTAMP}"
 
 QUICK_COMMANDS=""
 if [[ -n "$TERMINAL_ID" ]]; then
-  QUICK_COMMANDS+="\n\n💡 **快捷命令**\n"
-  QUICK_COMMANDS+="`cmux读取 ${TERMINAL_ID}`\n"
-  QUICK_COMMANDS+="`cmux发送 ${TERMINAL_ID} <命令>`"
+  QUICK_COMMANDS+=$'\n\n'"💡 **快捷命令**"$'\n'
+  QUICK_COMMANDS+='`cmux读取 '"${TERMINAL_ID}"'`'$'\n'
+  QUICK_COMMANDS+='`cmux发送 '"${TERMINAL_ID}"' <命令>`'
 fi
 
 TEXT="${EMOJI} **CMUX — ${LABEL}**\n\n${MESSAGE}${QUICK_COMMANDS}\n\n---\n${DETAILS}"

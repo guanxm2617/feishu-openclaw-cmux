@@ -82,7 +82,14 @@ DETAILS=""
 [[ -n "$BRANCH" ]]       && DETAILS+="- **分支:** ${BRANCH}\n"
 DETAILS+="- **时间:** ${TIMESTAMP}"
 
-TEXT="${EMOJI} **CMUX — ${LABEL}**\n\n${MESSAGE}\n\n---\n${DETAILS}"
+QUICK_COMMANDS=""
+if [[ -n "$TERMINAL_ID" ]]; then
+  QUICK_COMMANDS+="\n\n💡 **快捷命令**\n"
+  QUICK_COMMANDS+="`cmux读取 ${TERMINAL_ID}`\n"
+  QUICK_COMMANDS+="`cmux发送 ${TERMINAL_ID} <命令>`"
+fi
+
+TEXT="${EMOJI} **CMUX — ${LABEL}**\n\n${MESSAGE}${QUICK_COMMANDS}\n\n---\n${DETAILS}"
 
 # ── Send ──────────────────────────────────────────────────────────────────────
 send_text() {

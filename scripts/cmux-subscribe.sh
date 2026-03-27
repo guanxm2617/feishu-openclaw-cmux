@@ -48,7 +48,7 @@ case "$ACTION" in
       exit 0
     fi
     # Start daemon in background
-    bash "$DIR/cmux-daemon.sh" &
+    nohup bash "$DIR/cmux-daemon.sh" >/dev/null 2>&1 &
     DAEMON_PID=$!
     # Record PID before confirming to minimize untracked-process window
     state_set_daemon_pid "$DAEMON_PID"

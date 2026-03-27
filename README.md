@@ -15,18 +15,16 @@
 .
 ├── SKILL.md              # OpenClaw Skill 定义（完整命令参考）
 ├── README.md             # 本文件
-├── scripts/              # 核心脚本
-│   ├── cmux-send.sh          # CMUX Socket 通信基础脚本
-│   ├── cmux-list-all.sh      # 列出所有工作区和面板
-│   ├── cmux-exec.sh          # 发送命令并自动读取输出
-│   ├── cmux-read.sh          # 手动读取终端输出
-│   ├── cmux-subscribe.sh     # 订阅/取消订阅通知转发
-│   ├── cmux-daemon.sh        # 后台通知轮询守护进程
-│   ├── cmux-notify-feishu.sh # 发送通知到飞书
-│   ├── state.sh              # 状态管理（JSON 文件锁）
-│   └── feishu-send-card.mjs  # 飞书卡片消息发送
-└── hooks/                # Claude Code Hook 示例
-    └── claude-code-hooks.md
+└── scripts/              # 核心脚本
+    ├── cmux-send.sh          # CMUX Socket 通信基础脚本
+    ├── cmux-list-all.sh      # 列出所有工作区和面板
+    ├── cmux-exec.sh          # 发送命令并自动读取输出
+    ├── cmux-read.sh          # 手动读取终端输出
+    ├── cmux-subscribe.sh     # 订阅/取消订阅通知转发
+    ├── cmux-daemon.sh        # 后台通知轮询守护进程
+    ├── cmux-notify-feishu.sh # 发送通知到飞书
+    ├── state.sh              # 状态管理（JSON 文件锁）
+    └── feishu-send-card.mjs  # 飞书卡片消息发送
 ```
 
 ## 核心功能
@@ -152,28 +150,6 @@ CMUX_FEISHU_TARGET="oc_xxxx" \
 | `CMUX_DAEMON_POLL` | 通知轮询间隔（秒） | 4 |
 | `CMUX_DAEMON_MAX_SEEN` | 已读通知 ID 保留数量 | 200 |
 | `CMUX_FEISHU_TARGET` | 飞书目标会话 ID | - |
-
-### Claude Code Hook 集成
-
-在 `~/.claude/settings.json` 中添加 Hook，实现自动通知：
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "CMUX_FEISHU_TARGET='oc_xxxx' bash ~/.openclaw/skills/cmux/scripts/cmux-notify-feishu.sh --status waiting 'Claude 正在等待您的输入'"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
 
 ## 故障排查
 

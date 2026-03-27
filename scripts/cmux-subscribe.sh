@@ -2,9 +2,9 @@
 # cmux-subscribe.sh — Handle subscription commands from Feishu.
 #
 # Usage:
-#   cmux-subscribe.sh connect  [--target <open_id>]   # 连接CMUX
-#   cmux-subscribe.sh subscribe [--target <open_id>]  # 订阅CMUX
-#   cmux-subscribe.sh unsubscribe [--target <open_id>]# 取消订阅
+#   cmux-subscribe.sh connect  [--target <chat_id>]   # 连接CMUX
+#   cmux-subscribe.sh subscribe [--target <chat_id>]  # 订阅CMUX
+#   cmux-subscribe.sh unsubscribe [--target <chat_id>]# 取消订阅
 #   cmux-subscribe.sh status                          # 查看订阅状态
 #
 set -euo pipefail
@@ -23,14 +23,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Record sender if provided
-if [[ -n "$TARGET_ARG" ]]; then
-  state_record_sender "$TARGET_ARG"
-elif [[ -n "${OPENCLAW_SENDER_ID:-}" ]]; then
-  state_record_sender "$OPENCLAW_SENDER_ID"
-elif [[ -n "${CMUX_FEISHU_TARGET:-}" ]]; then
-  state_record_sender "$CMUX_FEISHU_TARGET"
-fi
+# Record chat target if available
+state_record_sender "$TARGET_ARG"
 
 TARGET=$(state_get_target)
 

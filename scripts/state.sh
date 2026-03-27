@@ -78,37 +78,63 @@ finally:
 PYEOF
 }
 
-# ── Record sender from environment or argument ────────────────────────────────
+# ── Normalize a Feishu target for storage ─────────────────────────────────────
+# Stored targets should be raw chat ids like oc_xxx when possible.
+normalize_target() {
+  local raw="${1:-}"
+  raw="${raw#"${raw%%[![:space:]]*}"}"
+  raw="${raw%"${raw##*[![:space:]]}"}"
+
+  case "$raw" in
+    chat:*) echo "${raw#chat:}" ;;
+    *)      echo "$raw" ;;
+  esac
+}
+
+# ── Record sender/target from environment or argument ─────────────────────────
 # Call this at the top of any script that receives a Feishu message.
 # Usage: state_record_sender [explicit_target]
-# Priority: explicit arg > CMUX_FEISHU_TARGET env > OPENCLAW_SENDER_ID env
+# Priority: explicit arg > CMUX_FEISHU_TARGET env > OPENCLAW_CONVERSATION_LABEL
+#          env > OPENCLAW_CHAT_ID env > OPENCLAW_SENDER_ID env
 state_record_sender() {
   local explicit="${1:-}"
-  local sender=""
+  local target=""
 
   if [[ -n "$explicit" ]]; then
-    sender="$explicit"
+    target="$explicit"
   elif [[ -n "${CMUX_FEISHU_TARGET:-}" ]]; then
-    sender="$CMUX_FEISHU_TARGET"
+    target="$CMUX_FEISHU_TARGET"
+  elif [[ -n "${OPENCLAW_CONVERSATION_LABEL:-}" ]]; then
+    target="$OPENCLAW_CONVERSATION_LABEL"
+  elif [[ -n "${OPENCLAW_CHAT_ID:-}" ]]; then
+    target="$OPENCLAW_CHAT_ID"
   elif [[ -n "${OPENCLAW_SENDER_ID:-}" ]]; then
-    sender="$OPENCLAW_SENDER_ID"
+    target="$OPENCLAW_SENDER_ID"
   fi
 
-  if [[ -n "$sender" ]]; then
-    state_set "target" "$sender"
+  target="$(normalize_target "$target")"
+
+  if [[ -n "$target" ]]; then
+    state_set "target" "$target"
     state_set "last_seen" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   fi
 }
 
 # ── Get the current notification target ───────────────────────────────────────
-# Returns the stored target, or falls back to CMUX_FEISHU_TARGET env
+# Returns the stored target, or falls back to current chat-oriented env vars.
 state_get_target() {
   local stored
   stored=$(state_get "target")
   if [[ -n "$stored" ]]; then
-    echo "$stored"
+    normalize_target "$stored"
   elif [[ -n "${CMUX_FEISHU_TARGET:-}" ]]; then
-    echo "$CMUX_FEISHU_TARGET"
+    normalize_target "$CMUX_FEISHU_TARGET"
+  elif [[ -n "${OPENCLAW_CONVERSATION_LABEL:-}" ]]; then
+    normalize_target "$OPENCLAW_CONVERSATION_LABEL"
+  elif [[ -n "${OPENCLAW_CHAT_ID:-}" ]]; then
+    normalize_target "$OPENCLAW_CHAT_ID"
+  elif [[ -n "${OPENCLAW_SENDER_ID:-}" ]]; then
+    normalize_target "$OPENCLAW_SENDER_ID"
   else
     echo ""
   fi

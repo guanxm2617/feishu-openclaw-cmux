@@ -11,7 +11,7 @@
 #   -b, --branch <name>      Git branch (auto-detected)
 #   -w, --workspace <name>   CMUX workspace name
 #   -i, --terminal-id <id>   CMUX terminal ID (e.g. 3-1)
-#   -t, --target <open_id>   Override Feishu target (skips state lookup)
+#   -t, --target <target>    Override Feishu target (chat:oc_xxx, oc_xxx, or user id)
 #   --force                  Send even if not subscribed
 #   -h, --help               Show help
 #
@@ -57,6 +57,12 @@ fi
 TARGET="${TARGET_OVERRIDE:-$(state_get_target)}"
 [[ -z "$TARGET" ]] && { echo "ERROR: No Feishu target. Ask user to send '连接CMUX' in Feishu first." >&2; exit 1; }
 
+case "$TARGET" in
+  chat:*) TARGET_DEST="$TARGET" ;;
+  oc_*)   TARGET_DEST="chat:$TARGET" ;;
+  *)      TARGET_DEST="$TARGET" ;;
+esac
+
 # ── Status config ─────────────────────────────────────────────────────────────
 case "${STATUS:-}" in
   completed|done|finish*) COLOR="green";  EMOJI="✅"; LABEL="已完成" ;;
@@ -82,7 +88,7 @@ TEXT="${EMOJI} **CMUX — ${LABEL}**\n\n${MESSAGE}\n\n---\n${DETAILS}"
 send_text() {
   openclaw message send \
     --channel feishu \
-    --target "chat:${TARGET}" \
+    --target "$TARGET_DEST" \
     --message "$TEXT" \
     2>&1
 }

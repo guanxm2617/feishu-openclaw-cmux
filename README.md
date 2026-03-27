@@ -128,7 +128,8 @@ CMUX_FEISHU_TARGET="oc_xxxx" \
 
 | 命令 | 触发词 | 说明 |
 |------|--------|------|
-| 列出工作区 | `列出cmux工作区`、`cmux列表`、`连接CMUX` | 显示所有工作区和面板 |
+| 连接会话 | `连接CMUX`、`绑定CMUX` | 记录当前飞书会话，供后续通知回推 |
+| 列出工作区 | `列出cmux工作区`、`cmux列出终端`、`列出cmux终端`、`cmux列表` | 显示所有工作区和面板 |
 | 发送命令 | `cmux发送 <ID> <命令>` | 发送命令并返回执行结果 |
 | 读取输出 | `cmux读取 <ID>`、`cmux读取 <ID> 最近N行` | 读取终端输出 |
 | 订阅通知 | `订阅CMUX`、`开启CMUX通知` | 启动通知转发 |
@@ -149,7 +150,7 @@ CMUX_FEISHU_TARGET="oc_xxxx" \
 | `CMUX_READ_MAX_LINES` | 手动读取最大行数 | 200 |
 | `CMUX_DAEMON_POLL` | 通知轮询间隔（秒） | 4 |
 | `CMUX_DAEMON_MAX_SEEN` | 已读通知 ID 保留数量 | 200 |
-| `CMUX_FEISHU_TARGET` | 飞书目标会话 ID | - |
+| `CMUX_FEISHU_TARGET` | 飞书目标会话 ID，推荐传当前 `conversation_label`（如 `oc_xxx`） | - |
 
 ## 故障排查
 

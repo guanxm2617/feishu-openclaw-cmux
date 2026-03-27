@@ -183,13 +183,27 @@ Add to `~/.claude/settings.json` to auto-notify Feishu when Claude Code stops:
 
 When a user messages the bot in Feishu, recognize these patterns and act immediately:
 
-### Pattern 1: List workspaces
+### Pattern 1: Connect current Feishu chat to CMUX
 
-**Trigger phrases (any of):** `列出cmux工作区`, `cmux工作区`, `列出终端`, `list cmux`, `cmux列表`, `查看cmux`, `show cmux workspaces`, `cmux状态`, `cmux workspace list`, `连接CMUX`, `connect cmux`
+**Trigger phrases (any of):** `连接CMUX`, `connect cmux`, `绑定CMUX`, `绑定当前会话`, `连接当前会话`
 
 **Action:**
 ```bash
-bash ~/.openclaw/skills/cmux/scripts/cmux-list-all.sh
+bash ~/.openclaw/skills/cmux/scripts/cmux-subscribe.sh connect --target <conversation_label>
+```
+
+`<conversation_label>` should be the current Feishu chat id, typically `oc_xxx`. This records the chat target used by later CMUX notifications.
+
+Returns plain text confirmation. Send to Feishu.
+
+### Pattern 2: List workspaces
+
+**Trigger phrases (any of):** `列出cmux工作区`, `cmux工作区`, `cmux列出终端`, `列出cmux终端`, `cmux终端列表`, `列出终端`, `list cmux`, `cmux列表`, `查看cmux`, `show cmux workspaces`, `cmux状态`, `cmux workspace list`
+
+**Action:**
+```bash
+CMUX_FEISHU_TARGET="<conversation_label>" \
+  bash ~/.openclaw/skills/cmux/scripts/cmux-list-all.sh
 ```
 
 The script outputs rich markdown. Send it directly to Feishu using:
@@ -197,9 +211,9 @@ The script outputs rich markdown. Send it directly to Feishu using:
 openclaw message send --channel feishu --target "chat:<chat_id>" --message "<output>"
 ```
 
-The script auto-records the sender's chat_id to `state.json` when called from openclaw context (via `OPENCLAW_SENDER_ID` env var).
+Always pass the current Feishu `conversation_label` as `CMUX_FEISHU_TARGET` so the script can persist the correct chat target for future notifications.
 
-### Pattern 2: Send command to terminal
+### Pattern 3: Send command to terminal
 
 **Trigger phrase:** `cmux发送 <终端ID> <指令>`
 
@@ -212,7 +226,8 @@ The script auto-records the sender's chat_id to `state.json` when called from op
 
 **Action:**
 ```bash
-bash ~/.openclaw/skills/cmux/scripts/cmux-exec.sh <终端ID> <指令>
+CMUX_FEISHU_TARGET="<conversation_label>" \
+  bash ~/.openclaw/skills/cmux/scripts/cmux-exec.sh <终端ID> <指令>
 ```
 
 The script outputs rich markdown confirmation **including execution result and recent terminal output** (waits ~3s for command to run). Send it to Feishu:
@@ -224,7 +239,7 @@ Configuration (optional env vars):
 - `CMUX_EXEC_WAIT` — seconds to wait before reading (default: 3, max: 10)
 - `CMUX_EXEC_READ_LINES` — lines to read after execution (default: 20, max: 50)
 
-### Pattern 6: Read terminal output
+### Pattern 4: Read terminal output
 
 **Trigger phrases:** `cmux读取 <终端ID>`, `cmux查看 <终端ID>`, `读取终端 <终端ID>`
 
@@ -237,7 +252,8 @@ Configuration (optional env vars):
 
 **Action:**
 ```bash
-bash ~/.openclaw/skills/cmux/scripts/cmux-read.sh <终端ID> [lines]
+CMUX_FEISHU_TARGET="<conversation_label>" \
+  bash ~/.openclaw/skills/cmux/scripts/cmux-read.sh <终端ID> [lines]
 ```
 
 Argument formats for `[lines]`:
@@ -255,33 +271,33 @@ The script outputs rich markdown with terminal content. Send it to Feishu:
 openclaw message send --channel feishu --target "chat:<chat_id>" --message "<output>"
 ```
 
-### Pattern 3: Subscribe to CMUX notifications
+### Pattern 5: Subscribe to CMUX notifications
 
 **Trigger phrases:** `订阅CMUX`, `subscribe cmux`, `开启CMUX通知`, `cmux通知开启`
 
 **Action:**
 ```bash
-bash ~/.openclaw/skills/cmux/scripts/cmux-subscribe.sh subscribe
+bash ~/.openclaw/skills/cmux/scripts/cmux-subscribe.sh subscribe --target <conversation_label>
 ```
 
 This starts a background polling daemon that checks native CMUX notifications every ~4 seconds and forwards new ones to the recorded Feishu session.
 
 Returns plain text confirmation. Send to Feishu.
 
-### Pattern 4: Unsubscribe from CMUX notifications
+### Pattern 6: Unsubscribe from CMUX notifications
 
 **Trigger phrases:** `取消订阅`, `unsubscribe cmux`, `关闭CMUX通知`, `cmux通知关闭`
 
 **Action:**
 ```bash
-bash ~/.openclaw/skills/cmux/scripts/cmux-subscribe.sh unsubscribe
+bash ~/.openclaw/skills/cmux/scripts/cmux-subscribe.sh unsubscribe --target <conversation_label>
 ```
 
 This stops the background polling daemon. Native CMUX notifications inside the app are unaffected.
 
 Returns plain text confirmation. Send to Feishu.
 
-### Pattern 5: Check subscription status
+### Pattern 7: Check subscription status
 
 **Trigger phrases:** `CMUX订阅状态`, `cmux status`, `订阅状态`
 

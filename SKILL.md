@@ -155,30 +155,6 @@ CMUX_FEISHU_TARGET="<chat_id_or_open_id>" \
 
 ---
 
-## Wire into Claude Code hooks
-
-Add to `~/.claude/settings.json` to auto-notify Feishu when Claude Code stops:
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "CMUX_FEISHU_TARGET='oc_xxxx' bash ~/.openclaw/skills/cmux/scripts/cmux-notify-feishu.sh --status waiting 'Agent is waiting for your input'"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
----
-
 ## Feishu → cmux: Recognized command patterns
 
 When a user messages the bot in Feishu, recognize these patterns and act immediately:

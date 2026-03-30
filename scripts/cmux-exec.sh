@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cmux-exec.sh — Send a command to a specific cmux terminal by ID (WS_IDX-PANE_IDX).
+# cmux-exec.sh — Send a command to a specific cmux terminal by stable or legacy ID.
 #
 # Usage:
 #   cmux-exec.sh <terminal-id> <command text>
@@ -9,6 +9,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 SEND="$DIR/cmux-send.sh"
 source "$DIR/state.sh"
+source "$DIR/terminal-id.sh"
 
 # Configuration for auto-read
 WAIT_TIME="${CMUX_EXEC_WAIT:-3}"
@@ -36,37 +37,36 @@ classify_status() {
 state_record_sender
 
 if [[ $# -lt 2 ]]; then
-  echo "Usage: cmux-exec.sh <WS_IDX-PANE_IDX> <command>" >&2
+  echo "Usage: cmux-exec.sh <terminal-id> <command>" >&2
   echo "Run cmux-list-all.sh to see available terminal IDs." >&2
   exit 1
 fi
 
-TERMINAL_ID="$1"
+TERMINAL_REF="$1"
 shift
 COMMAND="$*"
 
-if [[ ! "$TERMINAL_ID" =~ ^[0-9]+-[0-9]+$ ]]; then
-  echo "ERROR: Invalid terminal ID '$TERMINAL_ID'. Expected format: WS_IDX-PANE_IDX (e.g. 3-1)" >&2
+TERMINAL_RECORDS=$(cmux_collect_terminal_records 2>/dev/null) || {
+  echo "ERROR: Cannot enumerate cmux terminals. Is cmux running?" >&2
+  exit 1
+}
+
+RESOLVED_RECORD=""
+if RESOLVED_RECORD="$(cmux_resolve_terminal_ref "$TERMINAL_RECORDS" "$TERMINAL_REF")"; then
+  :
+else
+  RESOLVE_STATUS=$?
+  if [[ "$RESOLVE_STATUS" -eq 2 ]]; then
+    echo "ERROR: Terminal ID '$TERMINAL_REF' is ambiguous. Run cmux-list-all.sh and use a longer ID." >&2
+  else
+    echo "ERROR: Terminal ID '$TERMINAL_REF' not found. Run cmux-list-all.sh to see available terminal IDs." >&2
+  fi
   exit 1
 fi
 
-WS_IDX="${TERMINAL_ID%-*}"
-PANE_IDX="${TERMINAL_ID#*-}"
-
-# Read workspace name before switching
-WORKSPACE_NAME=$(bash "$SEND" list_workspaces 2>/dev/null | awk -v idx="$WS_IDX" '
-  {
-    line=$0
-    sub(/^\* /, "", line)
-    sub(/^  /, "", line)
-    split(line, a, ": ")
-    if (a[1] == idx) {
-      sub(/^[^ ]+ /, "", a[2])
-      print a[2]
-      exit
-    }
-  }
-')
+IFS='|' read -r WS_IDX _ WORKSPACE_NAME PANE_IDX PANE_UUID <<< "$RESOLVED_RECORD"
+TERMINAL_ID="$(cmux_terminal_short_id_from_uuid "$TERMINAL_RECORDS" "$PANE_UUID")"
+LEGACY_TERMINAL_ID="${WS_IDX}-${PANE_IDX}"
 
 ORIGINAL_WS_IDX=$(bash "$SEND" list_workspaces 2>/dev/null | awk '/^\*/{print $2}' | tr -d ':') || ORIGINAL_WS_IDX=""
 
@@ -103,6 +103,7 @@ fi
 OUTPUT="✅ **CMUX 指令已发送**\n\n"
 OUTPUT+="- **工作区:** ${WORKSPACE_NAME:-$WS_IDX}\n"
 OUTPUT+="- **终端 ID:** ${TERMINAL_ID}\n"
+OUTPUT+="- **位置:** ${LEGACY_TERMINAL_ID}\n"
 OUTPUT+="- **指令内容:** \`${COMMAND}\`\n"
 OUTPUT+="- **时间:** $(date '+%Y-%m-%d %H:%M:%S')\n\n"
 OUTPUT+="---\n\n"

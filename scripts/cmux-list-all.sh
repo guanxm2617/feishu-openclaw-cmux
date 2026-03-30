@@ -7,18 +7,17 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 SEND="$DIR/cmux-send.sh"
 source "$DIR/state.sh"
+source "$DIR/terminal-id.sh"
 
 # Auto-record sender if called from openclaw context
 state_record_sender
-
-# ── Get current workspace to restore later ────────────────────────────────────
-ORIGINAL_WS=$(bash "$SEND" current_workspace 2>/dev/null | tr -d '[:space:]') || ORIGINAL_WS=""
 
 # ── Get all workspaces ────────────────────────────────────────────────────────
 WORKSPACES=$(bash "$SEND" list_workspaces 2>/dev/null) || {
   echo "ERROR: Cannot connect to cmux socket. Is cmux running?" >&2
   exit 1
 }
+TERMINAL_RECORDS=$(cmux_collect_terminal_records 2>/dev/null) || TERMINAL_RECORDS=""
 
 # Parse workspace lines
 ORIGINAL_IDX=""
@@ -78,14 +77,13 @@ for i in "${!WS_INDEXES[@]}"; do
     pane_idx="${sline%%:*}"
     pane_uuid="${sline#*: }"
     pane_uuid="${pane_uuid%% *}"
-    short_id="${pane_uuid:0:8}"
-    terminal_id="${idx}-${pane_idx}"
+    terminal_label="$(cmux_render_terminal_label "$TERMINAL_RECORDS" "$idx" "$pane_idx" "$pane_uuid")"
     TOTAL_TERMINALS=$((TOTAL_TERMINALS + 1))
 
     if $focused_pane; then
-      OUTPUT+="  ▶ 终端 **${terminal_id}** \`${short_id}...\` ← 当前活跃\n"
+      OUTPUT+="  ▶ 终端 **${terminal_label}** ← 当前活跃\n"
     else
-      OUTPUT+="    终端 **${terminal_id}** \`${short_id}...\`\n"
+      OUTPUT+="    终端 **${terminal_label}**\n"
     fi
   done <<< "$SURFACES"
   OUTPUT+="\n"
@@ -100,7 +98,7 @@ fi
 OUTPUT+="---\n"
 OUTPUT+="📊 共 **${TOTAL_WORKSPACES}** 个工作区 / **${TOTAL_TERMINALS}** 个终端\n\n"
 OUTPUT+="💡 **发送指令:** \`cmux发送 终端ID 你的指令\`\n"
-OUTPUT+="例如: \`cmux发送 3-1 继续工作\`"
+OUTPUT+="例如: \`cmux发送 a1b2c3d4 继续工作\`"
 
 # ── Output ────────────────────────────────────────────────────────────────────
 echo -e "$OUTPUT"
